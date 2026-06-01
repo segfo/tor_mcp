@@ -64,6 +64,41 @@ uv run python -m tor_mcp.tor_process --start
 PYTHONUTF8=1 uv run python -m tor_mcp.scratch
 ```
 
+## 運用ノウハウ / トラブルシューティング
+
+### 目視確認は `manual_check.py`（既存Torに相乗り）
+MCPサーバ稼働中に手動で取得結果を目で見たいときは `manual_check.py` を使う。
+このスクリプトは**新しい tor.exe を起動せず、MCPが既に動かしている SOCKS
+9050 に相乗り**するため、ポート衝突しない。
+
+```bash
+# 既定の2URL(check.torproject + DuckDuckGo onion)を順に取得・表示
+PYTHONUTF8=1 uv run python -m tor_mcp.manual_check
+# 任意URLを目視確認（複数可）。status / final_url / content-type / title / 本文先頭500字
+PYTHONUTF8=1 uv run python -m tor_mcp.manual_check https://example.onion/
+```
+
+逆に `tor_process --start` や `scratch` は**自前で tor.exe を起動する**ので、
+MCPサーバが既にTorを動かしていると 9050/9051 で衝突する。手動の目視確認には
+`manual_check.py` を使い分けること。
+
+### `Address already in use [WSAEADDRINUSE]`（起動失敗）
+9050/9051 を別の tor.exe が掴んでいる。多くは前回実行で残った孤立プロセス。
+
+```bash
+netstat -ano | grep -E "9050|9051"          # 占有PIDを特定
+taskkill //PID <該当PID> //F                # vendor/tor 配下のものだけ落とす
+```
+
+- **Tor Browser は 9150/9151** を使うため本サーバ（9050/9051）と共存可。
+  Tor Browser の tor.exe は落とさないこと。素性は
+  `powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"name='tor.exe'\" | Select ProcessId,CommandLine | Format-List"`
+  で CommandLine を見て判別する（`tor_mcp/vendor/tor` 配下が本サーバのもの）。
+
+### 文字化け（cp932）
+日本語コンソールで実行する際は `PYTHONUTF8=1` を付ける。無いと cp932 で
+クラッシュ・文字化けすることがある。
+
 ## 倫理・法的方針（重要）
 
 - **受動的な情報収集（閲覧・公開テキストの収集）に限定**する。
@@ -71,3 +106,9 @@ PYTHONUTF8=1 uv run python -m tor_mcp.scratch
 - `onion_search` の結果には未審査・違法な掲載が含まれ得る。
   **結果は検証者が評価する前提**であり、ツールは内容の合法性を保証しない。
 - 調査は認可された範囲で、各国法令・所属組織の規程に従って実施すること。
+
+## ライセンス / 著作権
+
+Copyright (c) 2026 segfo
+
+本ソフトウェアは MIT License の下で公開されています。詳細は [LICENSE](LICENSE) を参照。
