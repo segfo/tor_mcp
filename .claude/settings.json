@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx --version)",
+      "Bash(python -c ' *)",
+      "Bash(npx -y dotenv-cli -e .env -- node -e \"console.log\\('BRAVE_API_KEY len:', \\(process.env.BRAVE_API_KEY||''\\).length, 'TAVILY len:', \\(process.env.TAVILY_API_KEY||''\\).length\\)\")",
+      "Bash(timeout 10 npx -y dotenv-cli -e .env -- npx -y @brave/brave-search-mcp-server)",
+      "Bash(kill %1)",
+      "Bash(uv --directory /c/Users/segfo/Documents/AI/OSINT run python -c \"import sys; print\\(sys.executable\\)\")",
+      "Bash(uv --directory /c/Users/segfo/Documents/AI/OSINT run python -c \"from mcp.server.fastmcp import FastMCP; print\\('mcp OK'\\)\")",
+      "Bash(PYTHONUTF8=1 uv run python -m tor_mcp)",
+      "Bash(PYTHONUTF8=1 uv run --directory .. python -m tor_mcp)",
+      "Bash(timeout 10 npx -y dotenv-cli -e ../.env -- npx -y @brave/brave-search-mcp-server)",
+      "Bash(PYTHONUTF8=1 uv --directory /c/Users/segfo/Documents/AI/OSINT run python -m tor_mcp)"
+    ]
+  }
+}

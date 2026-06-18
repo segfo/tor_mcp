@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "tor-osint": {
+      "command": "uv",
+      "args": ["run", "--directory", "..", "python", "-m", "tor_mcp"],
+      "env": {
+        "PYTHONUTF8": "1"
+      }
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "dotenv-cli", "-e", "../.env", "--", "npx", "-y", "@brave/brave-search-mcp-server"]
+    },
+    "tavily": {
+      "command": "npx",
+      "args": ["-y", "dotenv-cli", "-e", "../.env", "--", "npx", "-y", "tavily-mcp"]
+    }
+  }
+}
