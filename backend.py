@@ -111,7 +111,11 @@ def _build_dispatch(config: TorConfig) -> dict[str, Callable[[dict[str, Any]], A
         )
 
     async def browser_open(a: dict[str, Any]) -> Any:
-        result = await _browser.goto_smart(a["url"], config, wait_until=a.get("wait_until", "load"))
+        result = await _browser.goto_smart(
+            a["url"], config,
+            wait_until=a.get("wait_until", "load"),
+            mode=a.get("mode", "auto"),
+        )
         return _maybe_save(result, a.get("save_path", ""))
 
     async def browser_state(a: dict[str, Any]) -> Any:

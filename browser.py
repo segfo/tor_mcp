@@ -102,6 +102,7 @@ class BrowserSession:
                 kwargs: dict[str, Any] = dict(
                     headless=self.config.headless,
                     os="windows",
+                    window=(self.config.browser_width, self.config.browser_height),
                 )
                 if proxy:
                     kwargs["proxy"] = proxy
@@ -191,7 +192,17 @@ class BrowserSession:
 
     async def goto(self, url: str, wait_until: str = "load") -> dict[str, Any]:
         page = await self.ensure()
-        resp = await page.goto(url, wait_until=wait_until)  # type: ignore[arg-type]
+        try:
+            resp = await page.goto(url, wait_until=wait_until)  # type: ignore[arg-type]
+        except Exception as exc:
+            # Window was closed externally (user closed it, crash, etc.)
+            # Tear down stale state and retry once with a fresh window.
+            if "closed" in str(exc).lower():
+                await self._teardown()
+                page = await self.ensure()
+                resp = await page.goto(url, wait_until=wait_until)  # type: ignore[arg-type]
+            else:
+                raise
         out = await self._snapshot(page, render="text")
         out["status"] = resp.status if resp else None
         # Persist cookies after each navigation so they survive process termination
@@ -355,38 +366,49 @@ async def goto_smart(
     url: str,
     config: Optional[TorConfig] = None,
     wait_until: str = "load",
+    mode: str = "auto",
 ) -> dict[str, Any]:
-    """Navigate with automatic Tor/direct routing.
+    """Navigate with Tor/direct routing.
 
-    .onion URLs always go through Tor.
-    Clearnet URLs are tried direct first; on any error the request is retried
-    via Tor and ``via`` in the result is set to ``"tor_fallback"``.
+    mode:
+      "auto"   — .onion → Tor; clearnet → Direct first.
+                 Closed windows are re-launched automatically on the first retry.
+                 If Direct ultimately fails, traffic falls back to Tor.
+      "tor"    — Always use Tor (clearnet and .onion alike).
+      "direct" — Always use Direct; .onion URLs are rejected.
+                 Closed window is re-launched automatically on the first retry.
     """
     global _ACTIVE_SESSION
 
-    if _is_onion(url):
+    if mode == "tor" or (mode == "auto" and _is_onion(url)):
         session = _get_tor_session(config)
         result = await session.goto(url, wait_until=wait_until)
         result["via"] = "tor"
         _ACTIVE_SESSION = session
         return result
 
-    # Try direct first
+    if mode == "direct":
+        if _is_onion(url):
+            raise BrowserError(".onion URL cannot be opened in direct mode")
+        direct = _get_direct_session(config)
+        result = await direct.goto(url, wait_until=wait_until)
+        result["via"] = "direct"
+        _ACTIVE_SESSION = direct
+        return result
+
+    # mode == "auto", clearnet: try Direct first, fallback to Tor on any error
     direct = _get_direct_session(config)
-    direct_error: Optional[str] = None
     try:
         result = await direct.goto(url, wait_until=wait_until)
         result["via"] = "direct"
         _ACTIVE_SESSION = direct
         return result
-    except Exception as exc:  # noqa: BLE001
-        direct_error = f"{type(exc).__name__}: {exc}"
+    except Exception:
+        pass
 
-    # Fall back to Tor
     tor = _get_tor_session(config)
     result = await tor.goto(url, wait_until=wait_until)
-    result["via"] = "tor_fallback"
-    result["direct_error"] = direct_error
+    result["via"] = "tor"
     _ACTIVE_SESSION = tor
     return result
 

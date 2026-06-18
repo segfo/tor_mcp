@@ -10,12 +10,75 @@ Claude ──(MCP/stdio)──▶ tor_mcp ──(SOCKS5h)──▶ tor.exe ─�
 
 ## 提供ツール
 
+### Tor ネットワーク
+
 | ツール | 用途 |
 |--------|------|
 | `tor_check` | Tor 経由かを検証し、出口ノードIPを返す（初回は tor 起動で10〜40秒） |
 | `tor_fetch` | .onion / Web ページを取得（HTML→テキスト整形・タイトル・リンク抽出） |
 | `tor_new_circuit` | 新しい回路（別の出口IP）を要求。前後の出口IPと変化有無を返す |
 | `onion_search` | Tor 検索エンジン（Tordex / Torch）で .onion を検索 |
+
+### ブラウザ（Playwright + Camoufox）
+
+JavaScript レンダリングが必要なページ・ログインが必要なサイト・キュー待ちが
+発生する掲示板など、`tor_fetch` では取れないコンテンツ向け。
+
+| ツール | 用途 |
+|--------|------|
+| `browser_open` | URL を開く（ルーティング自動）。`via` パラメータで強制指定可 |
+| `browser_state` | 現在のページ状態を再取得（ポーリング用） |
+| `browser_click` | CSS セレクタで要素をクリック |
+| `browser_fill` | 入力フィールドに値を入力 |
+| `browser_wait` | セレクタ出現 / URL 変化 / テキスト出現を待機 |
+| `browser_screenshot` | PNG スクリーンショットを保存 |
+| `browser_eval` | JavaScript を実行して結果を取得 |
+| `browser_login` | 環境変数から認証情報を読んでログインフォームを送信 |
+| `browser_close` | セッションを閉じる（プロフィール保持） |
+| `browser_reset` | セッションを閉じてプロフィールも削除 |
+
+#### ブラウザのルーティング設計
+
+```
+表層 Web 用ブラウザ  (Direct セッション)
+  ↑ via="direct" または auto でクリアネット接続成功時
+
+ダークウェブ用ブラウザ (Tor セッション)
+  ↑ via="tor" または .onion URL または auto でフォールバック時
+```
+
+**2つのブラウザセッションを使い分ける理由:**
+
+- Camoufox (Firefox) はプロキシをブラウザ起動時に設定する。同一プロセス内で
+  Tor ↔ Direct を切り替えることはできない。
+- 表層 Web とダークウェブはそもそも別の調査対象であり、Cookie や
+  セッション状態を混在させないほうが調査の汚染が防げる。
+- ウィンドウが2つ開く場合があるが、これは設計上の意図。
+
+**`browser_open` の `via` パラメータ:**
+
+| 値 | 動作 |
+|----|------|
+| `"auto"` (既定) | .onion → Tor 固定。クリアネット → Direct を先に試す。ウィンドウが閉じていれば自動再起動。それでも失敗したら Tor にフォールバック |
+| `"tor"` | 常に Tor 経由（クリアネットでも匿名性が必要なとき） |
+| `"direct"` | 常に Direct（.onion は拒否）。ウィンドウが閉じていれば自動再起動 |
+
+結果の `via` フィールドで実際に使われたルートを確認できる（`"direct"` / `"tor"` / `"tor_fallback"`）。
+
+#### 手動テスト（browse_cli.py）
+
+```bash
+# OSINT ルートから起動
+uv run browse_cli.py
+```
+
+```
+URL (Enter to quit): https://check.torproject.org/
+Mode [a/t/d] (a): t
+  → via=tor  status=200  title='Tor Project | Are you using Tor?'
+```
+
+モード指定: `a` = auto、`t` = tor 強制、`d` = direct 強制
 
 ## セットアップ
 

@@ -115,14 +115,21 @@ async def onion_search(query: str, max_results: int = 20, engine: str = "tordex"
 
 
 @mcp.tool()
-async def browser_open(url: str, wait_until: str = "load", save_path: str = "") -> str:
+async def browser_open(
+    url: str,
+    wait_until: str = "load",
+    save_path: str = "",
+    via: str = "auto",
+) -> str:
     """Open a URL in the shared browser and return its state.
 
-    Routing is automatic:
-      - .onion URLs always go through Tor (SOCKS5).
-      - Clearnet URLs are tried direct first; if the connection fails or times
-        out, the request is retried through Tor. The ``via`` field in the result
-        indicates which path was used: "direct", "tor", or "tor_fallback".
+    via (routing mode):
+      "auto"   — .onion → Tor; clearnet → Direct first, fallback to Tor on error (default).
+      "tor"    — Always route through Tor (clearnet and .onion alike).
+      "direct" — Always use a direct connection; .onion URLs are rejected.
+
+    The ``via`` field in the result indicates which path was actually used:
+    "direct", "tor", or "tor_fallback".
 
     Args:
       url: Target http/https/.onion URL.
@@ -139,7 +146,8 @@ async def browser_open(url: str, wait_until: str = "load", save_path: str = "") 
     text — use this for collection so large pages don't fill the LLM context.
     """
     return _j(await backend_client.call(
-        config, "browser_open", {"url": url, "wait_until": wait_until, "save_path": save_path}
+        config, "browser_open",
+        {"url": url, "wait_until": wait_until, "save_path": save_path, "mode": via}
     ))
 
 
