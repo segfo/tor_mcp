@@ -85,10 +85,19 @@ Mode [a/t/d] (a): t
 ### 1. 依存パッケージ
 
 ```bash
+# Playwright のバンドルブラウザはダウンロードしない（システムブラウザ + Camoufox を使うため）
+export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1   # Windows(PowerShell): $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 uv pip install -r tor_mcp/requirements.txt
+
+# Camoufox（アンチフィンガープリント Firefox）本体を取得
+uv run python -m camoufox fetch
 ```
 
-（`mcp`, `httpx[socks]`, `stem`, `beautifulsoup4`）
+（`mcp`, `httpx[socks]`, `stem`, `beautifulsoup4`, `playwright`, `camoufox`）
+
+> **ブラウザ方針**: 本サーバは Tor 接続に Camoufox、Direct 接続にシステムインストール済み
+> ブラウザ（または Camoufox）を使う。`playwright install` は**実行不要**で、Playwright の
+> バンドルブラウザ（chromium/firefox/webkit）は一切起動しない。詳細は [docs/BROWSERS.md](docs/BROWSERS.md)。
 
 ### 2. Tor 本体（Tor Expert Bundle）の配置
 
@@ -113,6 +122,17 @@ Claude Code をこのディレクトリで起動すると認識される。
 | `TOR_MCP_TOR_EXE` | `vendor/tor/tor.exe` | tor バイナリのパス |
 | `TOR_MCP_SOCKS_PORT` | `9050` | SOCKS5 ポート（Tor Browser 併用時は競合に注意） |
 | `TOR_MCP_CONTROL_PORT` | `9051` | ControlPort（回路制御用） |
+| `TOR_MCP_DIRECT_BROWSER` | `(auto)` | Direct 接続のエンジン: `cdp` / `system` / `camoufox` / 空=自動（system→camoufox） |
+| `TOR_MCP_CLEARNET_BROWSER_EXE` | `(auto)` | system エンジン時に使うブラウザ実行ファイルの絶対パス |
+| `TOR_MCP_CLEARNET_BROWSER_TYPE` | `(auto)` | `chromium` / `firefox`（system エンジンのブラウザ種別） |
+| `TOR_MCP_CDP_PORT` | `9222` | cdp エンジンのリモートデバッグポート |
+| `TOR_MCP_CDP_AUTOLAUNCH` | `1` | cdp: ポート未起動時に Chrome を自動起動 |
+| `TOR_MCP_CHROME_EXE` | `(auto)` | cdp: Chrome 実行ファイル（空=自動検出） |
+| `TOR_MCP_CHROME_USER_DATA_DIR` | `vendor/cdp-chrome-profile` | cdp: User Data ディレクトリ（実プロファイル使用時は実 User Data を指定） |
+| `TOR_MCP_CHROME_PROFILE_DIR` | `Default` | cdp: `--profile-directory`（`Profile 1` 等） |
+| `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` | `1`（推奨） | Playwright バンドルブラウザのダウンロード抑止（本サーバは使用しない） |
+
+接続モデルとブラウザ選択の詳細は [docs/BROWSERS.md](docs/BROWSERS.md) を参照。
 
 Tor のライフサイクルはサーバが管理する（初回ツール使用時に起動、終了時に停止）。
 
