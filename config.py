@@ -63,6 +63,37 @@ class TorConfig:
     nav_timeout_ms: int = 60_000          # per-navigation timeout
     browser_wait_timeout_ms: int = 300_000  # waits (queues can take minutes)
 
+    # --- Direct (clearnet) browser engine selection ---
+    # The "direct" connection (no Tor) can be driven by the user's system browser,
+    # Camoufox, or a real Chrome attached over CDP (remote debugging).
+    #   ""        → auto: system browser if found, else fall back to Camoufox
+    #   "system"  → Playwright-launched system browser (BrowserError if none)
+    #   "camoufox"→ always Camoufox (anti-fingerprint Firefox)
+    #   "cdp"     → attach to a real Chrome over CDP (real profile/extensions, not
+    #               bot-detected; auto-launches Chrome with --remote-debugging-port)
+    # The Tor connection always uses Camoufox regardless of this setting.
+    direct_browser: str = ""          # "" | "system" | "camoufox" | "cdp"
+
+    # --- CDP engine (attach to a real Chrome over remote debugging) ---
+    # Drives the user's actual Chrome: real profile, extensions, no automation
+    # flags (no --no-sandbox / navigator.webdriver) → not bot-detected.
+    # NOTE: Chrome's --remote-debugging-port is ignored if another Chrome is
+    # already running on the SAME user-data-dir. The default below is a dedicated
+    # OSINT user-data-dir so it can coexist with your daily Chrome. Point
+    # cdp_user_data_dir at your real "...\Google\Chrome\User Data" to use your
+    # everyday profile, but then close all daily Chrome windows first.
+    cdp_port: int = 9222
+    cdp_autolaunch: bool = True        # auto-start Chrome if the port is not up
+    cdp_chrome_exe: str = ""           # empty = auto-detect (Chrome → Brave → Edge)
+    cdp_user_data_dir: Path = None     # type: ignore[assignment]  # default: vendor/cdp-chrome-profile
+    cdp_profile_dir: str = "Default"   # --profile-directory (e.g., "Profile 1")
+
+    # When the direct engine is "system" (or auto picks system), these select
+    # *which* installed browser to drive. Auto-detected if left empty.
+    clearnet_browser_exe: str = ""    # absolute path; empty = auto-detect
+    clearnet_browser_type: str = ""   # "chromium" | "firefox"; empty = auto
+    clearnet_profile_dir: Path = None  # type: ignore[assignment]  # vendor/clearnet-profile/
+
     def __post_init__(self) -> None:
         if self.tor_exe_path is None:
             self.tor_exe_path = _default_tor_exe()
@@ -76,6 +107,14 @@ class TorConfig:
             self.browser_profile_dir = PACKAGE_DIR / "vendor" / "browser-profile"
         else:
             self.browser_profile_dir = Path(self.browser_profile_dir)
+        if self.clearnet_profile_dir is None:
+            self.clearnet_profile_dir = PACKAGE_DIR / "vendor" / "clearnet-profile"
+        else:
+            self.clearnet_profile_dir = Path(self.clearnet_profile_dir)
+        if self.cdp_user_data_dir is None:
+            self.cdp_user_data_dir = PACKAGE_DIR / "vendor" / "cdp-chrome-profile"
+        else:
+            self.cdp_user_data_dir = Path(self.cdp_user_data_dir)
         if self.screenshot_dir is None:
             self.screenshot_dir = PACKAGE_DIR / "vendor" / "screenshots"
         else:
@@ -110,4 +149,22 @@ class TorConfig:
             kwargs["browser_profile_dir"] = Path(v)
         if (v := os.environ.get("TOR_MCP_SCREENSHOT_DIR")):
             kwargs["screenshot_dir"] = Path(v)
+        if (v := os.environ.get("TOR_MCP_DIRECT_BROWSER")):
+            kwargs["direct_browser"] = v.strip().lower()
+        if (v := os.environ.get("TOR_MCP_CDP_PORT")):
+            kwargs["cdp_port"] = int(v)
+        if (v := os.environ.get("TOR_MCP_CDP_AUTOLAUNCH")) is not None:
+            kwargs["cdp_autolaunch"] = v.strip().lower() in ("1", "true", "yes", "on")
+        if (v := os.environ.get("TOR_MCP_CHROME_EXE")):
+            kwargs["cdp_chrome_exe"] = v
+        if (v := os.environ.get("TOR_MCP_CHROME_USER_DATA_DIR")):
+            kwargs["cdp_user_data_dir"] = Path(v)
+        if (v := os.environ.get("TOR_MCP_CHROME_PROFILE_DIR")):
+            kwargs["cdp_profile_dir"] = v
+        if (v := os.environ.get("TOR_MCP_CLEARNET_BROWSER_EXE")):
+            kwargs["clearnet_browser_exe"] = v
+        if (v := os.environ.get("TOR_MCP_CLEARNET_BROWSER_TYPE")):
+            kwargs["clearnet_browser_type"] = v
+        if (v := os.environ.get("TOR_MCP_CLEARNET_PROFILE_DIR")):
+            kwargs["clearnet_profile_dir"] = Path(v)
         return cls(**kwargs)
