@@ -123,13 +123,18 @@ async def browser_open(
 ) -> str:
     """Open a URL in the shared browser and return its state.
 
-    via (routing mode):
-      "auto"   — .onion → Tor; clearnet → Direct first, fallback to Tor on error (default).
-      "tor"    — Always route through Tor (clearnet and .onion alike).
-      "direct" — Always use a direct connection; .onion URLs are rejected.
+    via (connection mode):
+      "auto"   — .onion → Tor; clearnet → Direct. Falls back to Tor if Direct fails (default).
+      "tor"    — Always route through Tor (Camoufox). Works for clearnet and .onion.
+      "direct" — Clearnet connection (no Tor); .onion URLs are rejected. The browser
+                 engine is chosen by TOR_MCP_DIRECT_BROWSER: "cdp" (real Chrome over
+                 CDP — real profile/extensions, not bot-detected), "system"
+                 (Playwright-launched browser), or "camoufox". Run
+                 browser_list_profiles() to see which engine is active.
+      "clearnet" — Deprecated alias for "direct" forced to the system-browser engine.
 
     The ``via`` field in the result indicates which path was actually used:
-    "direct", "tor", or "tor_fallback".
+    "tor", "direct(system)", "direct(camoufox)", or "tor_fallback".
 
     Args:
       url: Target http/https/.onion URL.
@@ -256,6 +261,24 @@ async def browser_login(
         "pass_env": pass_env,
         "submit_selector": submit_selector,
     }))
+
+
+@mcp.tool()
+async def browser_list_profiles() -> str:
+    """List the two connection modes (Tor / Direct) and the resolved Direct engine.
+
+    Returns:
+    - profiles: "tor" (always Camoufox) and "direct" (engine = system or camoufox,
+      resolved from TOR_MCP_DIRECT_BROWSER). The direct entry shows which system
+      browser is selected when the engine is "system".
+    - direct_engine: "system" or "camoufox" — what browser_open(via="direct") uses.
+    - detected_system_browsers: Every installed browser found (the selected one is marked).
+    - env_hints: Current TOR_MCP_DIRECT_BROWSER / CLEARNET_BROWSER_EXE / TYPE values.
+
+    Playwright's bundled browsers never appear here — they are never launched.
+    Run this before your first browser_open(via="direct") call to confirm the engine.
+    """
+    return _j(await backend_client.call(config, "browser_list_profiles", {}))
 
 
 @mcp.tool()

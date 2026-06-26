@@ -159,6 +159,9 @@ def _build_dispatch(config: TorConfig) -> dict[str, Callable[[dict[str, Any]], A
         await _browser.get_session(config).reset()
         return {"ok": True, "reset": True}
 
+    async def browser_list_profiles(_: dict[str, Any]) -> Any:
+        return await anyio.to_thread.run_sync(lambda: _browser.list_profiles(config))
+
     return {
         "tor_check": tor_check,
         "tor_fetch": tor_fetch,
@@ -174,6 +177,7 @@ def _build_dispatch(config: TorConfig) -> dict[str, Callable[[dict[str, Any]], A
         "browser_login": browser_login,
         "browser_close": browser_close,
         "browser_reset": browser_reset,
+        "browser_list_profiles": browser_list_profiles,
     }
 
 
