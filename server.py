@@ -222,6 +222,29 @@ async def browser_screenshot(full_page: bool = False) -> str:
 
 
 @mcp.tool()
+async def browser_solve_captcha() -> str:
+    """Attempt to clear the CAPTCHA on the current page (authorized sites only).
+
+    Behavior depends on the server's TOR_MCP_CAPTCHA_MODE:
+      - "human" (default): no auto-solve — returns solved=false, mode="human".
+      - "ai": checkbox widgets (Turnstile / reCAPTCHA / hCaptcha "I'm not a
+        robot") are clicked inside their iframe; classic image/text CAPTCHAs are
+        read by the claude.exe vision harness (local VLM first, Anthropic
+        fallback) and typed into the answer field. The answer is NOT submitted —
+        press the submit/login control yourself afterward.
+      - "off": no-op.
+
+    Image-grid / picture-selection CAPTCHAs are never auto-solved.
+
+    Returns {present, kind, mode, solved, message, answer?, image_path?}.
+    If solved=false (mode=human, reason=needs_human, or a failed attempt), fall
+    back to the human resume flow: emit `ERROR: auth_required` and stop. This is
+    NOT an authentication-bypass tool — use it only on sites you may access.
+    """
+    return _j(await backend_client.call(config, "browser_solve_captcha", {}))
+
+
+@mcp.tool()
 async def browser_eval(js: str) -> str:
     """Run a JavaScript expression in the page and return its JSON result.
 

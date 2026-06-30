@@ -162,6 +162,9 @@ def _build_dispatch(config: TorConfig) -> dict[str, Callable[[dict[str, Any]], A
     async def browser_list_profiles(_: dict[str, Any]) -> Any:
         return await anyio.to_thread.run_sync(lambda: _browser.list_profiles(config))
 
+    async def browser_solve_captcha(_: dict[str, Any]) -> Any:
+        return await _browser.solve_active_captcha(config)
+
     return {
         "tor_check": tor_check,
         "tor_fetch": tor_fetch,
@@ -178,6 +181,7 @@ def _build_dispatch(config: TorConfig) -> dict[str, Callable[[dict[str, Any]], A
         "browser_close": browser_close,
         "browser_reset": browser_reset,
         "browser_list_profiles": browser_list_profiles,
+        "browser_solve_captcha": browser_solve_captcha,
     }
 
 
@@ -229,9 +233,11 @@ def run_backend(config: TorConfig | None = None) -> None:
     """Run the shared backend over HTTP (blocking). Exits if the port is taken."""
     import uvicorn
 
-    config = config or TorConfig.from_env()
-    # Load credentials for browser_login (project-root .env).
+    # Load .env BEFORE building config so TOR_MCP_* (incl. captcha) overrides and
+    # browser_login credentials (SITE_USER/…) are both visible to TorConfig and
+    # to subprocesses (e.g. the CAPTCHA vision harness) that inherit os.environ.
     _load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+    config = config or TorConfig.from_env()
 
     # Browser closes first (registered last → LIFO), then Tor.
     atexit.register(shutdown_tor)

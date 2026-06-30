@@ -980,6 +980,24 @@ def list_profiles(config: Optional[TorConfig] = None) -> dict[str, Any]:
     }
 
 
+async def solve_active_captcha(config: Optional[TorConfig] = None) -> dict[str, Any]:
+    """Attempt to clear the CAPTCHA on the active page (see captcha.solve()).
+
+    Works on whichever session was last navigated (Tor / direct / system / cdp),
+    since they all expose ensure() and a live page. Honors config.captcha_mode.
+    """
+    from . import captcha
+    session = get_session(config)
+    page = await session.ensure()
+    result = await captcha.solve(page, config)
+    # A passed checkbox may set session cookies; persist them like click/goto do.
+    try:
+        await session._save_storage_state()  # type: ignore[attr-defined]
+    except Exception:  # noqa: BLE001
+        pass
+    return result
+
+
 async def shutdown_session_async() -> None:
     global _TOR_SESSION, _DIRECT_CAMOUFOX_SESSION, _DIRECT_SYSTEM_SESSION
     global _DIRECT_CDP_SESSION, _ACTIVE_SESSION

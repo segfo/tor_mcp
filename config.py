@@ -94,6 +94,24 @@ class TorConfig:
     clearnet_browser_type: str = ""   # "chromium" | "firefox"; empty = auto
     clearnet_profile_dir: Path = None  # type: ignore[assignment]  # vendor/clearnet-profile/
 
+    # --- CAPTCHA auto-solving (browser_solve_captcha) ---
+    # mode: "human" (default; no auto-solve, fall back to the existing human
+    #       resume flow), "ai" (attempt to solve), or "off" (no-op).
+    # The visual (image/text) CAPTCHA path shells out to the claude.exe harness
+    # (captcha_llm_cmd) which reads the cropped screenshot with its Read tool and
+    # answers. The vision model is chosen LOCAL-FIRST:
+    #   1. CAPTCHA-specific overrides (captcha_base_url/model/auth_token) → pin a
+    #      dedicated local VLM, independent of the orchestrator's model.
+    #   2. else inherit the backend's env (Invoke-ClaudeLocal / .env) = local.
+    #   3. else, if captcha_allow_anthropic_fallback, retry on plain Anthropic.
+    captcha_mode: str = "human"            # "human" | "ai" | "off"
+    captcha_llm_cmd: str = "claude"        # harness command for visual solving
+    captcha_base_url: str = ""             # CAPTCHA-only ANTHROPIC_BASE_URL override
+    captcha_model: str = ""                # CAPTCHA-only ANTHROPIC_MODEL override
+    captcha_auth_token: str = ""           # CAPTCHA-only ANTHROPIC_AUTH_TOKEN override
+    captcha_allow_anthropic_fallback: bool = True  # retry on Anthropic if local fails
+    captcha_solve_timeout_ms: int = 120_000  # checkbox-pass / harness wait budget
+
     def __post_init__(self) -> None:
         if self.tor_exe_path is None:
             self.tor_exe_path = _default_tor_exe()
@@ -167,4 +185,18 @@ class TorConfig:
             kwargs["clearnet_browser_type"] = v
         if (v := os.environ.get("TOR_MCP_CLEARNET_PROFILE_DIR")):
             kwargs["clearnet_profile_dir"] = Path(v)
+        if (v := os.environ.get("TOR_MCP_CAPTCHA_MODE")):
+            kwargs["captcha_mode"] = v.strip().lower()
+        if (v := os.environ.get("TOR_MCP_CAPTCHA_LLM_CMD")):
+            kwargs["captcha_llm_cmd"] = v
+        if (v := os.environ.get("TOR_MCP_CAPTCHA_BASE_URL")):
+            kwargs["captcha_base_url"] = v
+        if (v := os.environ.get("TOR_MCP_CAPTCHA_MODEL")):
+            kwargs["captcha_model"] = v
+        if (v := os.environ.get("TOR_MCP_CAPTCHA_AUTH_TOKEN")):
+            kwargs["captcha_auth_token"] = v
+        if (v := os.environ.get("TOR_MCP_CAPTCHA_ALLOW_ANTHROPIC_FALLBACK")) is not None:
+            kwargs["captcha_allow_anthropic_fallback"] = v.strip().lower() in ("1", "true", "yes", "on")
+        if (v := os.environ.get("TOR_MCP_CAPTCHA_SOLVE_TIMEOUT_MS")):
+            kwargs["captcha_solve_timeout_ms"] = int(v)
         return cls(**kwargs)
