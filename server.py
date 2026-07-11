@@ -14,6 +14,7 @@ acquisition/trade of illegal content, or any active attack.
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -37,6 +38,11 @@ def _j(obj: Any) -> str:
     return json.dumps(obj, ensure_ascii=False, indent=2)
 
 
+def _tor_disabled_error() -> str:
+    return _j({"error": "tor_disabled",
+               "message": "Tor is disabled for this run (TOR_MCP_DISABLE_TOR). This tool was not invoked."})
+
+
 @mcp.tool()
 async def tor_check() -> str:
     """Verify that outbound traffic is routed through Tor and report the exit IP.
@@ -45,6 +51,8 @@ async def tor_check() -> str:
     call may take ~10-40s while Tor bootstraps). Returns whether the connection
     is recognized as Tor and the current exit-node IP address.
     """
+    if config.disable_tor:
+        return _tor_disabled_error()
     return _j(await backend_client.call(config, "tor_check", {}))
 
 
@@ -66,6 +74,8 @@ async def tor_fetch(url: str, render: str = "text", max_text_chars: int = 20000,
     Binary / non-textual responses are not downloaded; only metadata is reported.
     For passive OSINT collection only.
     """
+    if config.disable_tor:
+        return _tor_disabled_error()
     return _j(await backend_client.call(
         config, "tor_fetch",
         {"url": url, "render": render, "max_text_chars": max_text_chars, "save_path": save_path},
@@ -80,6 +90,8 @@ async def tor_new_circuit(verify: bool = True) -> str:
     verify=True (default), reports the exit IP before and after and whether it
     changed (a change is likely but not guaranteed on every request).
     """
+    if config.disable_tor:
+        return _tor_disabled_error()
     return _j(await backend_client.call(config, "tor_new_circuit", {"verify": verify}))
 
 
@@ -96,6 +108,8 @@ async def onion_search(query: str, max_results: int = 20, engine: str = "tordex"
     content of any returned onion URL. For passive OSINT discovery only — results
     are unmoderated and must be assessed by the investigator.
     """
+    if config.disable_tor:
+        return _tor_disabled_error()
     return _j(await backend_client.call(
         config, "onion_search",
         {"query": query, "max_results": max_results, "engine": engine},
@@ -150,6 +164,10 @@ async def browser_open(
     title, links, interactive elements, an 800-char preview) instead of the full
     text — use this for collection so large pages don't fill the LLM context.
     """
+    if config.disable_tor:
+        resolves_to_tor = via == "tor" or (via == "auto" and bool(re.search(r"\.onion(?:[:/]|$)", url, re.I)))
+        if resolves_to_tor:
+            return _tor_disabled_error()
     return _j(await backend_client.call(
         config, "browser_open",
         {"url": url, "wait_until": wait_until, "save_path": save_path, "mode": via}

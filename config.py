@@ -112,6 +112,13 @@ class TorConfig:
     captcha_allow_anthropic_fallback: bool = True  # retry on Anthropic if local fails
     captcha_solve_timeout_ms: int = 120_000  # checkbox-pass / harness wait budget
 
+    # --- Tor deny gate (defense-in-depth #2, see plans/osint-agent-scope-and-followup-design.md) ---
+    # When True, tor_check/tor_fetch/tor_new_circuit/onion_search refuse outright,
+    # and browser_open refuses only when the resolved connection mode is "tor".
+    # Lets a clearnet-only orchestrator run (--scope clearnet) guarantee no Tor
+    # egress even if a JSON filter upstream lets a .onion URL slip through.
+    disable_tor: bool = False
+
     def __post_init__(self) -> None:
         if self.tor_exe_path is None:
             self.tor_exe_path = _default_tor_exe()
@@ -199,4 +206,6 @@ class TorConfig:
             kwargs["captcha_allow_anthropic_fallback"] = v.strip().lower() in ("1", "true", "yes", "on")
         if (v := os.environ.get("TOR_MCP_CAPTCHA_SOLVE_TIMEOUT_MS")):
             kwargs["captcha_solve_timeout_ms"] = int(v)
+        if (v := os.environ.get("TOR_MCP_DISABLE_TOR")) is not None:
+            kwargs["disable_tor"] = v.strip().lower() in ("1", "true", "yes", "on")
         return cls(**kwargs)
