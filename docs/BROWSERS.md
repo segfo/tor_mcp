@@ -10,7 +10,7 @@ webkit）は**一切起動しない**。
 
 | 接続 | プロキシ | ブラウザエンジン | 用途 |
 |------|----------|------------------|------|
-| **Tor**    | SOCKS5 `127.0.0.1:9050` | **Camoufox 固定** | `.onion`、Direct 失敗時のフォールバック |
+| **Tor**    | SOCKS5 `127.0.0.1:9050` | **Camoufox 固定** | `.onion` |
 | **Direct** | なし | 設定で選択（cdp / system / camoufox） | 通常のクリアネット URL |
 
 - **Tor は常に Camoufox**。システムブラウザを Tor 経由にするとフィンガープリント/DNS
@@ -89,7 +89,7 @@ system エンジン時に「どのシステムブラウザを使うか」は次�
 
 | `via` | 接続 | 結果の `via` |
 |-------|------|--------------|
-| `auto`（既定） | `.onion`→Tor、それ以外→Direct（失敗時 Tor） | `tor` / `direct(system)` / `direct(camoufox)` / `tor_fallback` |
+| `auto`（既定） | `.onion`→Tor、それ以外→Direct（失敗時はエラー） | `tor` / `direct(system)` / `direct(camoufox)` |
 | `tor`    | 常に Tor（Camoufox） | `tor` |
 | `direct` | クリアネットのみ（`.onion` 拒否）、エンジンは設定依存 | `direct(system)` / `direct(camoufox)` |
 | `clearnet` | **非推奨エイリアス**。Direct を system エンジン強制 | `direct(system)` |

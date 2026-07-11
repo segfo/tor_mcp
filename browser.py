@@ -2,7 +2,7 @@
 
 Two connection modes are exposed:
   - Tor connection   : all traffic via SOCKS5 127.0.0.1:9050. Always Camoufox.
-                       Used for .onion and as a fallback when Direct fails.
+                       Used for .onion URLs.
   - Direct connection: no proxy (ordinary clearnet URLs). The engine is chosen
                        by TOR_MCP_DIRECT_BROWSER (see _resolve_direct_engine):
                          "system"  → Playwright-launched installed browser
@@ -13,8 +13,10 @@ Two connection modes are exposed:
 
 Routing (goto_smart):
   1. .onion URL    → Tor (always).
-  2. Clearnet URL  → Direct (resolved engine); in "auto" mode, a failing Direct
-                     connection falls back to Tor.
+  2. Clearnet URL  → Direct (resolved engine). A failing Direct connection
+                     raises rather than silently retrying over Tor — no hidden
+                     fallback, matching the "explicit guard, no fallback to a
+                     different engine" policy used elsewhere (docs/BROWSERS.md).
 
 The "active session" (whichever was last successfully navigated) is returned by
 get_session(), so browser_click / browser_fill / browser_state all operate on
@@ -854,7 +856,8 @@ async def goto_smart(
     """Navigate with Tor/Direct routing.
 
     Two connection modes:
-      "auto"   — .onion → Tor; clearnet → Direct. If Direct fails, fall back to Tor.
+      "auto"   — .onion → Tor; clearnet → Direct. A failing Direct connection
+                 raises rather than falling back to Tor.
       "tor"    — Always route through Tor (Camoufox). Works for clearnet and .onion.
       "direct" — Clearnet connection (no Tor); .onion URLs are rejected.
                  The browser engine (system browser or Camoufox) is chosen by
@@ -862,7 +865,7 @@ async def goto_smart(
       "clearnet" — Deprecated alias for direct with the system-browser engine.
 
     The returned ``via`` field reports the path actually used: "tor",
-    "direct(system)", "direct(camoufox)", or "tor_fallback".
+    "direct(system)", or "direct(camoufox)".
     Closed windows are re-launched automatically on the first retry (in goto()).
     """
     global _ACTIVE_SESSION
@@ -884,21 +887,9 @@ async def goto_smart(
         direct = _get_direct_session(config)
     engine = getattr(direct, "engine_label", "camoufox")
 
-    try:
-        result = await direct.goto(url, wait_until=wait_until)
-        result["via"] = f"direct({engine})"
-        _ACTIVE_SESSION = direct
-        return result
-    except Exception:
-        # In auto mode a flaky direct connection falls back to Tor; explicit
-        # direct/clearnet requests surface the error to the caller.
-        if mode != "auto":
-            raise
-
-    tor = _get_tor_session(config)
-    result = await tor.goto(url, wait_until=wait_until)
-    result["via"] = "tor_fallback"
-    _ACTIVE_SESSION = tor
+    result = await direct.goto(url, wait_until=wait_until)
+    result["via"] = f"direct({engine})"
+    _ACTIVE_SESSION = direct
     return result
 
 

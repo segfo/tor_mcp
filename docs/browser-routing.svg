@@ -1,0 +1,48 @@
+<svg viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+  <defs>
+    <marker id="arr-muted" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#6b7280"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="900" height="380" fill="#f8fafc"/>
+
+  <text x="450" y="20" text-anchor="middle" font-size="14px" font-weight="bold" fill="#1e293b">browser_open のルーティングと Tor拒否ゲート</text>
+
+  <!-- ボックス: browser_open -->
+  <rect x="350" y="30" width="200" height="55" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+  <text x="450" y="52" text-anchor="middle" font-size="12px" font-weight="bold" fill="#1e40af">browser_open(url, via)</text>
+  <text x="450" y="69" text-anchor="middle" font-size="10px" fill="#1e40af">MCP tool</text>
+
+  <!-- 分岐配線 -->
+  <polyline points="450,85 450,105 250,105 250,178" fill="none" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr-muted)"/>
+  <polyline points="450,105 650,105 650,178" fill="none" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr-muted)"/>
+
+  <!-- 左: 常に通過 -->
+  <text x="250" y="147" text-anchor="middle" font-size="9px" fill="#065f46">常に通過（ゲート対象外）</text>
+
+  <!-- 右: Tor拒否ゲート -->
+  <line x1="605" y1="140" x2="695" y2="140" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="6, 3"/>
+  <text x="650" y="150" text-anchor="middle" font-size="22px" font-weight="bold" fill="#ef4444">&#10005;</text>
+  <text x="705" y="128" font-size="10px" font-weight="bold" fill="#7f1d1d">TOR_MCP_DISABLE_TOR=1</text>
+  <text x="705" y="143" font-size="10px" fill="#7f1d1d">のとき拒否</text>
+
+  <!-- ボックス: 表層 Web 用ブラウザ (Direct) -->
+  <rect x="90" y="180" width="320" height="110" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+  <text x="250" y="205" text-anchor="middle" font-size="13px" font-weight="bold" fill="#1e40af">表層 Web 用ブラウザ</text>
+  <text x="250" y="223" text-anchor="middle" font-size="11px" fill="#1e40af">(Direct セッション)</text>
+  <text x="250" y="248" text-anchor="middle" font-size="10px" fill="#334155">via="direct"、または</text>
+  <text x="250" y="263" text-anchor="middle" font-size="10px" fill="#334155">via="auto" でクリアネット URL</text>
+
+  <!-- ボックス: ダークウェブ用ブラウザ (Tor) -->
+  <rect x="490" y="180" width="320" height="110" rx="6" fill="#fed7aa" stroke="#f97316" stroke-width="2"/>
+  <text x="650" y="205" text-anchor="middle" font-size="13px" font-weight="bold" fill="#7c2d12">ダークウェブ用ブラウザ</text>
+  <text x="650" y="223" text-anchor="middle" font-size="11px" fill="#7c2d12">(Tor セッション)</text>
+  <text x="650" y="248" text-anchor="middle" font-size="10px" fill="#334155">via="tor" 明示、または</text>
+  <text x="650" y="263" text-anchor="middle" font-size="10px" fill="#334155">via="auto" で .onion URL のとき</text>
+
+  <!-- 凡例ボックス -->
+  <rect x="90" y="305" width="720" height="55" rx="6" fill="white" stroke="#ef4444" stroke-width="1.5"/>
+  <text x="450" y="325" text-anchor="middle" font-size="11px" font-weight="bold" fill="#7f1d1d">TOR_MCP_DISABLE_TOR=1 の効果（多層防御 第2層、defense-in-depth #2）</text>
+  <text x="450" y="345" text-anchor="middle" font-size="10px" fill="#334155">via="tor" に解決されたときのみ拒否 / via="direct"、および via="auto" のクリアネットURLは影響を受けない</text>
+</svg>

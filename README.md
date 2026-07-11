@@ -3,10 +3,11 @@
 ローカルで管理する Tor プロセス（SOCKS5h プロキシ）経由で .onion / Web に
 アクセスする MCP サーバ。**受動的な OSINT 情報収集**を目的とする。
 
-```
-Claude ──(MCP/stdio)──▶ tor_mcp ──(SOCKS5h)──▶ tor.exe ──▶ .onion / Web
-                            └──(ControlPort/stem)──▶ tor.exe（回路制御）
-```
+![tor_mcp 全体アーキテクチャと Tor拒否ゲート](docs/architecture.svg)
+
+`TOR_MCP_DISABLE_TOR=1` を設定すると、上図の赤いゲート地点で `tor_mcp`
+自体がバックエンド（Tor プロセス）へ到達する前にツール呼び出しを拒否する
+（詳細は [Tor拒否ゲート](#tor拒否ゲートtor_mcp_disable_tor) を参照）。
 
 ## 提供ツール
 
@@ -39,13 +40,11 @@ JavaScript レンダリングが必要なページ・ログインが必要なサ
 
 #### ブラウザのルーティング設計
 
-```
-表層 Web 用ブラウザ  (Direct セッション)
-  ↑ via="direct" または auto でクリアネット接続成功時
+![browser_open のルーティングと Tor拒否ゲート](docs/browser-routing.svg)
 
-ダークウェブ用ブラウザ (Tor セッション)
-  ↑ via="tor" または .onion URL または auto でフォールバック時
-```
+`via="tor"` に解決される経路（`via="tor"` 明示、または `via="auto"` で
+`.onion` URL）は `TOR_MCP_DISABLE_TOR=1` のとき拒否される。`via="direct"`
+はこのゲートの影響を受けない。
 
 **2つのブラウザセッションを使い分ける理由:**
 
@@ -59,11 +58,11 @@ JavaScript レンダリングが必要なページ・ログインが必要なサ
 
 | 値 | 動作 |
 |----|------|
-| `"auto"` (既定) | .onion → Tor 固定。クリアネット → Direct を先に試す。ウィンドウが閉じていれば自動再起動。それでも失敗したら Tor にフォールバック |
+| `"auto"` (既定) | .onion → Tor 固定。クリアネット → Direct。ウィンドウが閉じていれば自動再起動。失敗時はそのままエラーになる（Torへのフォールバックはしない） |
 | `"tor"` | 常に Tor 経由（クリアネットでも匿名性が必要なとき） |
 | `"direct"` | 常に Direct（.onion は拒否）。ウィンドウが閉じていれば自動再起動 |
 
-結果の `via` フィールドで実際に使われたルートを確認できる（`"direct"` / `"tor"` / `"tor_fallback"`）。
+結果の `via` フィールドで実際に使われたルートを確認できる（`"direct"` / `"tor"`）。
 
 #### 手動テスト（browse_cli.py）
 
@@ -131,10 +130,33 @@ Claude Code をこのディレクトリで起動すると認識される。
 | `TOR_MCP_CHROME_USER_DATA_DIR` | `vendor/cdp-chrome-profile` | cdp: User Data ディレクトリ（実プロファイル使用時は実 User Data を指定） |
 | `TOR_MCP_CHROME_PROFILE_DIR` | `Default` | cdp: `--profile-directory`（`Profile 1` 等） |
 | `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` | `1`（推奨） | Playwright バンドルブラウザのダウンロード抑止（本サーバは使用しない） |
+| `TOR_MCP_DISABLE_TOR` | `0`（無効） | `1`/`true`/`yes`/`on` で Tor 経路を拒否するゲートを有効化（後述） |
 
 接続モデルとブラウザ選択の詳細は [docs/BROWSERS.md](docs/BROWSERS.md) を参照。
 
 Tor のライフサイクルはサーバが管理する（初回ツール使用時に起動、終了時に停止）。
+
+### Tor拒否ゲート（`TOR_MCP_DISABLE_TOR`）
+
+クリアネット専用の調査（例: `osint-agent.py --scope clearnet`）でも、
+上流のフィルタが `.onion` URL を誤って通過させてしまう可能性がある。
+`TOR_MCP_DISABLE_TOR=1` は、そうした場合に備えた**多層防御の第2層**として
+`tor_mcp` サーバ自体に組み込まれた実行時ゲートで、バックエンド（Tor プロセス）
+へ一切到達させずにツール呼び出しを拒否する。
+
+- `tor_check` / `tor_fetch` / `tor_new_circuit` / `onion_search` は
+  関数の先頭で無条件に拒否する。
+- `browser_open` は解決された接続方式が `"tor"` のとき
+  （`via="tor"` 明示、または `via="auto"` かつ URL が `.onion`）だけ拒否する。
+  `via="direct"`、および `via="auto"` でクリアネット URL のときは拒否されない
+  （`via="auto"` は Direct 接続に失敗しても Tor へフォールバックしないため、
+  この静的な判定だけで十分である）。
+- 既定値は無効（`0`）。設定しない限り、これまでどおり Tor 経由の調査を行える。
+
+拒否時は `{"error": "tor_disabled", ...}` を返し、Tor 側へのアクセス試行は
+一切発生しない（ログにも残らない）。設計の経緯は
+[plans/osint-agent-scope-and-followup-design.md](../plans/osint-agent-scope-and-followup-design.md)
+の決定事項8を参照。
 
 ## 動作確認（スタンドアロン）
 

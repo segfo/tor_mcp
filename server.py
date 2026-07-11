@@ -138,7 +138,8 @@ async def browser_open(
     """Open a URL in the shared browser and return its state.
 
     via (connection mode):
-      "auto"   — .onion → Tor; clearnet → Direct. Falls back to Tor if Direct fails (default).
+      "auto"   — .onion → Tor; clearnet → Direct (default). A failing Direct
+                 connection raises rather than falling back to Tor.
       "tor"    — Always route through Tor (Camoufox). Works for clearnet and .onion.
       "direct" — Clearnet connection (no Tor); .onion URLs are rejected. The browser
                  engine is chosen by TOR_MCP_DIRECT_BROWSER: "cdp" (real Chrome over
@@ -148,7 +149,7 @@ async def browser_open(
       "clearnet" — Deprecated alias for "direct" forced to the system-browser engine.
 
     The ``via`` field in the result indicates which path was actually used:
-    "tor", "direct(system)", "direct(camoufox)", or "tor_fallback".
+    "tor", "direct(system)", or "direct(camoufox)".
 
     Args:
       url: Target http/https/.onion URL.

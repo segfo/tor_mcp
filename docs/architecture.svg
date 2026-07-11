@@ -1,0 +1,461 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 1000 650"
+   font-family="sans-serif"
+   version="1.1"
+   id="svg32"
+   sodipodi:docname="architecture.svg"
+   inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview32"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="1.6748329"
+     inkscape:cx="619.16625"
+     inkscape:cy="239.12833"
+     inkscape:window-width="1920"
+     inkscape:window-height="1009"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg32" />
+  <defs
+     id="defs3">
+    <marker
+       id="arr-info"
+       markerWidth="8"
+       markerHeight="8"
+       refX="7"
+       refY="3"
+       orient="auto">
+      <path
+         d="M0,0 L0,6 L8,3 z"
+         fill="#3b82f6"
+         id="path1" />
+    </marker>
+    <marker
+       id="arr-ok"
+       markerWidth="8"
+       markerHeight="8"
+       refX="7"
+       refY="3"
+       orient="auto">
+      <path
+         d="M0,0 L0,6 L8,3 z"
+         fill="#059669"
+         id="path2" />
+    </marker>
+    <marker
+       id="arr-muted"
+       markerWidth="8"
+       markerHeight="8"
+       refX="7"
+       refY="3"
+       orient="auto">
+      <path
+         d="M0,0 L0,6 L8,3 z"
+         fill="#6b7280"
+         id="path3" />
+    </marker>
+  </defs>
+  <rect
+     x="0"
+     y="0"
+     width="1000"
+     height="650"
+     fill="#f8fafc"
+     id="rect3"
+     style="stroke-width:1" />
+  <text
+     x="500"
+     y="25"
+     text-anchor="middle"
+     font-size="15px"
+     font-weight="bold"
+     fill="#1e293b"
+     id="text3">tor_mcp 全体アーキテクチャと Tor拒否ゲート</text>
+  <text
+     x="500"
+     y="44"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#6b7280"
+     id="text4">上段: Tor経路（ゲート対象） / 下段: クリアネット直結経路（ゲート対象外、失敗時もTorへはフォールバックしない）</text>
+  <!-- Tor拒否ゲート帯（バリア。上段の高さのみをカバーし、下段のクリアネット経路とは交差しない） -->
+  <rect
+     x="555"
+     y="60"
+     width="80"
+     height="290"
+     fill="#fecaca"
+     fill-opacity="0.55"
+     stroke="#ef4444"
+     stroke-width="1.5"
+     stroke-dasharray="6, 3"
+     id="rect4" />
+  <text
+     x="595"
+     y="78"
+     text-anchor="middle"
+     font-size="9px"
+     font-weight="bold"
+     fill="#7f1d1d"
+     id="text5">第2層</text>
+  <text
+     x="595"
+     y="228"
+     text-anchor="middle"
+     font-size="12px"
+     font-weight="bold"
+     fill="#7f1d1d"
+     id="text6">拒否ゲート</text>
+  <!-- ボックス: Claude -->
+  <rect
+     x="30"
+     y="95"
+     width="140"
+     height="70"
+     rx="6"
+     fill="#dbeafe"
+     stroke="#3b82f6"
+     stroke-width="2"
+     id="rect6" />
+  <text
+     x="100"
+     y="125"
+     text-anchor="middle"
+     font-size="13px"
+     font-weight="bold"
+     fill="#1e40af"
+     id="text7">Claude</text>
+  <text
+     x="100"
+     y="142"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#1e40af"
+     id="text8">(MCPクライアント)</text>
+  <!-- ボックス: tor_mcp -->
+  <rect
+     x="300"
+     y="95"
+     width="220"
+     height="70"
+     rx="6"
+     fill="#bbf7d0"
+     stroke="#16a34a"
+     stroke-width="2"
+     id="rect8" />
+  <text
+     x="410"
+     y="120"
+     text-anchor="middle"
+     font-size="13px"
+     font-weight="bold"
+     fill="#065f46"
+     id="text9">tor_mcp（server.py）</text>
+  <text
+     x="410"
+     y="137"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#065f46"
+     id="text10">各ツール先頭で disable_tor 判定</text>
+  <text
+     x="410"
+     y="151"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#065f46"
+     id="text11">拒否ならbackendへ問い合わせない</text>
+  <!-- ボックス: tor.exe -->
+  <rect
+     x="680"
+     y="95"
+     width="140"
+     height="70"
+     rx="6"
+     fill="#fed7aa"
+     stroke="#f97316"
+     stroke-width="2"
+     id="rect11" />
+  <text
+     x="750"
+     y="125"
+     text-anchor="middle"
+     font-size="13px"
+     font-weight="bold"
+     fill="#7c2d12"
+     id="text12">tor.exe</text>
+  <text
+     x="750"
+     y="142"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#7c2d12"
+     id="text13">(Tor プロセス)</text>
+  <!-- ボックス: .onion / Web -->
+  <rect
+     x="880"
+     y="95"
+     width="90"
+     height="70"
+     rx="6"
+     fill="#ede9fe"
+     stroke="#7c3aed"
+     stroke-width="2"
+     id="rect13" />
+  <text
+     x="925"
+     y="124.89551"
+     text-anchor="middle"
+     font-size="11px"
+     font-weight="bold"
+     fill="#5b21b6"
+     id="text14">.onion</text>
+  <!-- 矢印: Claude -> tor_mcp -->
+  <line
+     x1="170"
+     y1="130"
+     x2="298"
+     y2="130"
+     stroke="#3b82f6"
+     stroke-width="1.5"
+     marker-end="url(#arr-info)"
+     id="line15" />
+  <text
+     x="235"
+     y="116"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#1e40af"
+     id="text16">(MCP/stdio)</text>
+  <!-- 矢印: tor_mcp -> tor.exe (SOCKS5h, ゲートを通過) -->
+  <line
+     x1="520"
+     y1="130"
+     x2="678"
+     y2="130"
+     stroke="#059669"
+     stroke-width="1.5"
+     marker-end="url(#arr-ok)"
+     id="line16" />
+  <text
+     x="596"
+     y="89.519951"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#065f46"
+     id="text17"
+     style="fill:#7f1d1d;fill-opacity:1">(SOCKS5h)</text>
+  <text
+     x="595"
+     y="139"
+     text-anchor="middle"
+     font-size="26px"
+     font-weight="bold"
+     fill="#ef4444"
+     id="text18">✕</text>
+  <!-- 矢印: tor.exe -> .onion/Web -->
+  <line
+     x1="820"
+     y1="130"
+     x2="878"
+     y2="130"
+     stroke="#059669"
+     stroke-width="1.5"
+     marker-end="url(#arr-ok)"
+     id="line18" />
+  <!-- 矢印: tor_mcp -> tor.exe (ControlPort/stem, 回路制御, ゲートを通過) -->
+  <polyline
+     points="410,165 410,310 748,310 748,165"
+     fill="none"
+     stroke="#6b7280"
+     stroke-width="1.5"
+     marker-end="url(#arr-muted)"
+     id="polyline18" />
+  <rect
+     x="366.02725"
+     y="240.15892"
+     width="156"
+     height="14"
+     fill="#f8fafc"
+     fill-opacity="0.9"
+     id="rect18" />
+  <text
+     x="444.02725"
+     y="251.15892"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#374151"
+     id="text19">(ControlPort/stem, 回路制御)</text>
+  <text
+     x="595"
+     y="319"
+     text-anchor="middle"
+     font-size="22px"
+     font-weight="bold"
+     fill="#ef4444"
+     id="text20">✕</text>
+  <!-- 矢印: tor_mcp -> Direct ブラウザ (クリアネット直結、ゲート対象外) -->
+  <line
+     x1="350"
+     y1="165"
+     x2="350"
+     y2="418"
+     stroke="#3b82f6"
+     stroke-width="1.5"
+     marker-end="url(#arr-info)"
+     id="line20" />
+  <text
+     x="343.31729"
+     y="393.05548"
+     text-anchor="middle"
+     font-size="10px"
+     font-weight="bold"
+     fill="#065f46"
+     id="text21">via=&quot;direct&quot;、または auto（非.onion）</text>
+  <text
+     x="354.33499"
+     y="403.56061"
+     text-anchor="middle"
+     font-size="9px"
+     fill="#065f46"
+     id="text22">（ゲート対象外・Torを経由しない）</text>
+  <!-- ボックス: Direct ブラウザ -->
+  <rect
+     x="250"
+     y="420"
+     width="220"
+     height="70"
+     rx="6"
+     fill="#dbeafe"
+     stroke="#3b82f6"
+     stroke-width="2"
+     id="rect22" />
+  <text
+     x="360"
+     y="450"
+     text-anchor="middle"
+     font-size="13px"
+     font-weight="bold"
+     fill="#1e40af"
+     id="text23">Direct ブラウザ</text>
+  <text
+     x="360"
+     y="467"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#1e40af"
+     id="text24">(system/camoufox/cdp)</text>
+  <!-- ボックス: Web (クリアネット) -->
+  <rect
+     x="680"
+     y="420"
+     width="140"
+     height="70"
+     rx="6"
+     fill="#ede9fe"
+     stroke="#7c3aed"
+     stroke-width="2"
+     id="rect24" />
+  <text
+     x="750"
+     y="450"
+     text-anchor="middle"
+     font-size="13px"
+     font-weight="bold"
+     fill="#5b21b6"
+     id="text25">Web</text>
+  <text
+     x="750"
+     y="467"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#5b21b6"
+     id="text26">(クリアネット)</text>
+  <text
+     x="928.47815"
+     y="142.37984"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#5b21b6"
+     id="text26-9">（ダークウェブ）</text>
+  <!-- 矢印: Direct ブラウザ -> Web (帯の高さを超えた下段なのでゲートと交差しない) -->
+  <line
+     x1="470"
+     y1="455"
+     x2="678"
+     y2="455"
+     stroke="#3b82f6"
+     stroke-width="1.5"
+     marker-end="url(#arr-info)"
+     id="line26" />
+  <rect
+     x="550"
+     y="440"
+     width="90"
+     height="14"
+     fill="#f8fafc"
+     fill-opacity="0.9"
+     id="rect26" />
+  <text
+     x="595"
+     y="451"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#1e40af"
+     id="text27">(via=&quot;direct&quot;)</text>
+  <!-- 凡例ボックス -->
+  <rect
+     x="60"
+     y="530"
+     width="880"
+     height="107.78046"
+     rx="6"
+     fill="#ffffff"
+     stroke="#ef4444"
+     stroke-width="1.2715"
+     id="rect27"
+     ry="6" />
+  <text
+     x="80"
+     y="552"
+     font-size="12px"
+     font-weight="bold"
+     fill="#7f1d1d"
+     id="text28">TOR_MCP_DISABLE_TOR=1 のとき（多層防御 第2層、defense-in-depth #2）:</text>
+  <text
+     x="90"
+     y="572"
+     font-size="10px"
+     fill="#334155"
+     id="text29">● tor_check / tor_fetch / tor_new_circuit / onion_search → 常に即座に拒否（backendへ問い合わせない）</text>
+  <text
+     x="90"
+     y="590"
+     font-size="10px"
+     fill="#334155"
+     id="text30">● browser_open → via=&quot;tor&quot; 明示時、または via=&quot;auto&quot; で URL が .onion（Tor解決）のときのみ拒否</text>
+  <text
+     x="90"
+     y="608"
+     font-size="10px"
+     fill="#334155"
+     id="text31">● browser_open via=&quot;direct&quot;、および via=&quot;auto&quot; のクリアネットURLは拒否されない（図の青い経路はゲートの対象外）</text>
+  <text
+     x="90"
+     y="626"
+     font-size="10px"
+     fill="#6b7280"
+     id="text32">既定値: TOR_MCP_DISABLE_TOR 未設定 = 0（ゲート無効、通常どおりTorを使用）</text>
+</svg>
